@@ -22,9 +22,18 @@ def xor_bytes(a, b):
 # test if the padding is 1, then you can make that 0x02 and so on
 # it's brute force so for each byte, you try each letter and each padding
 
-default_url = "http://localhost:8080"
+default_urls = ["http://localhost:8080", "http://0.0.0.0:8080"]
+def check_url(urls):
+    for url in urls:
+        try: 
+            requests.get(url).status_code
+        except:
+            # one URL will be valid, the other won't
+            pass
+        else:
+            return url
 
-cipher_url = f"{default_url}/eavesdrop"
+cipher_url = f"{check_url(default_urls)}/eavesdrop"
 
 cipher_sample = requests.get(cipher_url)
 

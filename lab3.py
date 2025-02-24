@@ -34,55 +34,10 @@ def check_url(urls):
         else:
             return url
 
-cipher_url = f"{check_url(default_urls)}/eavesdrop"
-
-cipher_sample = requests.get(cipher_url)
-
-if cipher_sample.status_code == 200:
-    soup = BeautifulSoup(cipher_sample.text, "html.parser")
-    stuff = soup.find_all("p")[1].get_text().strip()
-    print('\nCipher text:\n\n' + stuff + '\n')
-
-    cipher_bytes = bytes.fromhex(stuff)
-    cipher_blocks = [cipher_bytes[i:i + 16] for i in range(0, len(cipher_bytes), 16)]
-
-
-    # Iterate through all the blocks, starting at the second to last one
-    for i in range(len(cipher_blocks) - 2, 0, -1):
-    
-        block = bytearray(cipher_blocks[i])
-
-        # Iterate through each byte of the block
-        for j in range(len(block) - 1, 0, -1):
-
-            # Try all possible bytes
-            for k in range(255):
-
-                # Test all possible paddings
-                for l in range(15):
-
-                    # Apply the padding to the block
-                    for m in range(len(block) - 1, l, -1):
-                        block[m] ^= bytes([l])
-
-else:
-    print("bad request")
-
-# for block in blocks:
-#     block_arr = bytearray(block)
-
-#     for byte in block_arr:
-
-#         for char in range(255):
-#             print("hi")
-=======
+default_url = check_url(default_urls)
+cipher_url = f"{default_url}/eavesdrop"
 def guess_padding():
-        
-
-    default_url = "http://localhost:8080"
-
-    cipher_url = f"{default_url}/eavesdrop"
-
+    
     cipher_sample = requests.get(cipher_url)
     session = requests.Session()
     if cipher_sample.status_code == 200:
@@ -140,7 +95,4 @@ print(hexstr)
     # for block in blocks:
     #     block_arr = bytearray(block)
 
-    #     for byte in block_arr:
-
-    #         for char in range(255):
-    #             print("hi")
+#     for byte in block_arr:

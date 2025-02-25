@@ -37,47 +37,66 @@ def check_url(urls):
 default_url = check_url(default_urls)
 cipher_url = f"{default_url}/eavesdrop"
 def guess_padding():
-    
+    counterr = 0
     cipher_sample = requests.get(cipher_url)
     session = requests.Session()
     if cipher_sample.status_code == 200:
         soup = BeautifulSoup(cipher_sample.text, "html.parser")
         stuff = soup.find_all("p")[1].get_text().strip()
         print('\nCipher text:\n\n' + stuff + '\n')
-
+        
         cipher_bytes = bytes.fromhex(stuff)
         cipher_blocks = [cipher_bytes[i:i + 16] for i in range(0, len(cipher_bytes), 16)]
 
         final_message = []
+        
         # Iterate through all the blocks, starting at the second to last one
-        for i in range(len(cipher_blocks) - 2, 0, -1):
-            final_block = []
-            block = bytearray(cipher_blocks[i])
-            print(bytes([block[0]]))
-            print("hi")
-            padding = 0
-            # Iterate through each byte of the block
-            for j in range(len(block) - 1, 0, -1):
-                padding += 1
-                print(len(block))
-                # Try all possible bytes
-                for k in range(255):
-                    block[j] ^= k
-                    for l in range(len(block) - 1, len(block) - 1 - padding, -1):
-                        block[j] ^= padding
-                    
-                    
-                    cipher_blocks[i] = bytes(block)
 
-                    modified_cookie = b"".join(cipher_blocks)
-                    
-                    modified_cookie_hex = modified_cookie.hex()
-                    print(modified_cookie_hex)
-                    
-                    guess = session.get(f"{default_url}/?enc={modified_cookie_hex}")
-                    if (guess.status_code == 404):
-                        final_block.append(k)
-            final_message.append(final_block)
+        for i in range(len(cipher_blocks)):
+            block_block = []
+            if i == len(cipher_blocks) - 2:
+                # special case with last one
+                print("hi")
+            else:
+
+                cur_block = bytearray(cipher_blocks[i])
+                next_block = bytearray(cipher_blocks[i + 1])
+                padding = 0
+                final_block = []
+                # block = bytearray(cipher_blocks[i])
+
+                # Iterate through each byte of the block
+                for j in range(len(cur_block) - 1, -1, -1):
+                    padding += 1
+
+                    # Try all possible bytes
+                    for k in range(255):
+                        cur_block[j] ^= k
+                        for l in range(len(cur_block) - 1, len(cur_block) - 1 - padding - 1, -1):
+                            cur_block[l] ^= padding
+                        
+
+                        # cipher_blocks[i] = bytes(cur_block)
+                        final_block.append(bytes(cur_block))
+                        final_block.append(bytes(next_block))
+
+                        modified_cookie = b"".join(final_block)
+                        
+                        modified_cookie_hex = modified_cookie.hex()
+
+                        
+                        guess = session.get(f"{default_url}/?enc={modified_cookie_hex}")
+                        if (guess.status_code == 404):
+                            break
+                            # block_block.append(k)
+                
+
+                final_message.append(cur_block)
+        
+
+
+
+
         return final_message
                         
             
@@ -86,8 +105,23 @@ def guess_padding():
         print("bad request")
 
 
+ll = [1, 2, 3 ,4]
+print(len(ll))
+for i in range(len(ll)):
+    print(i)
+
+
+
+
 this = guess_padding()
+print("\n")
+print(this)
+print("\n")
+print(len(this))
 yes = bytes(this[0])
+print(yes)
+print("\n")
+print("AAAAAAAHHHHHHHHHHHH")
 hexstr = yes.hex()
 print("\n")
 print(hexstr)

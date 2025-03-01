@@ -49,7 +49,7 @@ def guess_padding():
         cipher_blocks = [cipher_bytes[i:i + 16] for i in range(0, len(cipher_bytes), 16)]
 
         final_message = []
-        correct_flag = 0
+        check_flag = 0
         last_byte_option = None
         # Iterate through all the blocks, starting at the second to last one
         
@@ -67,11 +67,11 @@ def guess_padding():
 
             # Iterate through each byte of the block
             for j in range(len(cur_block) - 1, -1, -1):
-                if (i == len(cipher_blocks) - 1) and (j == len(cur_block) - 1):
-                    correct_flag = 1
+
                 # Try all possible bytes
                 for k in range(255):
-
+                    if (i == len(cipher_blocks) - 1) and (j == len(cur_block) - 1) and (k == 1):
+                        check_flag = 1
                     cur_block[j] ^= k
                     cur_block[j] ^= padding
                     
@@ -87,7 +87,7 @@ def guess_padding():
                     
                     guess = session.get(f"{default_url}/?enc={modified_cookie_hex}")
                     if (guess.status_code == 404):
-                        if (correct_flag != 1):
+                        if (check_flag == 1):
                             last_byte_option = k
                         else:
 

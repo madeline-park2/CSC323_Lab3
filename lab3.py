@@ -148,8 +148,10 @@ def sha1(msg):
     h2 = 0x98BADCFE
     h3 = 0x10325476
     h4 = 0xC3D2E1F0
-    bin_msg = bin(int.from_bytes(msg, byteorder="big"))[2:]  # remove '0b' prefix
+    bin_msg = ''.join(format(ord(char), '08b') for char in msg)
+    #bin_msg = bin(int.from_bytes(msg, byteorder="big"))  # remove '0b' prefix
     msg_len = len(bin_msg)
+    print(msg_len)
 
     # 2. pre-processing
     # append the bit '1' to the message
@@ -162,7 +164,7 @@ def sha1(msg):
     count = 0
     while ((not (len(bin_msg) % 512) == 448) or count == 512):
         bin_msg += str(0b0)  # ???????
-    bin_msg += str(msg_len)
+    bin_msg += bin(msg_len)[2:]
 
     # 3. process message in 512-bit chunks
     # for each chunk:
@@ -214,8 +216,13 @@ def sha1(msg):
         h2 = h2 + c
         h3 = h3 + d
         h4 = h4 + e
+        print(hex(h0))
+        print(hex(h1))
+        print(hex(h2))
+        print(hex(h3))
+        print(hex(h4))
 
     hh = (h0 << 128) | (h1 << 96) | (h2 << 64) | (h3 << 32) | h4
-    return hh   #??
+    return hex(hh)   #??
 
-print(sha1(b'abc'))
+print(sha1("abc"))

@@ -44,37 +44,38 @@ def sha1(msg: str) -> str:
     k = define_k()
 
     # 2. Pad message
-    bin_str = res = ''.join(format(ord(i), '08b') for i in msg)
+    bin_str = ''.join(format(ord(i), '08b') for i in msg)
     ml = len(bin_str)
+
     # append '1' to end of the message
     bin_str += '1'
-    #print(bin_str)
+
     # pad with zeros
-    num_zeros = (448 % 512) - (ml + 1)
+    num_zeros = (448 - (ml + 1)) % 512
+
     for i in range(num_zeros):
         bin_str += '0'
     #print(len(bin_str))
     # append original length to the end
-    bin_len= format(ml, '#010b')[2:]
-    for i in range(0, 64 - len(bin_len)):
-        bin_str += '0'
+    bin_len = format(ml, '#010b')[2:]
+    while (len(bin_len) < 63):
+        bin_len = '0' + bin_len
     bin_str += bin_len
     #print(bin_str)
     blocks = [bin_str[i:i + 512] for i in range(0, len(bin_str), 512)]
+    #print(len(blocks))
     # 3. Prepare the message schedule
     for block in blocks:
-        w_ints = []
+        #print(block)
         w = [block[i:i + 32] for i in range(0, len(block), 32)]
-        w += ['0' * 32] * 64
+        for a in w:
+            print(hex(int(a, 2)))
+        w_ints = []
+        w += ['0' * 32] * (80 - len(w))
         for item in w:
             w_ints.append(int(item, 2))
-        #print(w_ints)
-        #print(w)
-        for t in range(16, 79):
-            #print(int(str(w[t]), 2))
-            #print(int(w[t-3], 2))
-            
-            #w[t] = int(w[t-3], 2)
+
+        for t in range(16, 80):
             w_ints[t] = rotl((w_ints[t-3] 
                               ^ w_ints[t-8] 
                               ^ w_ints[t-14] 
@@ -88,7 +89,7 @@ def sha1(msg: str) -> str:
         e = h4
 
         # main loop
-        for t in range(0, 79):
+        for t in range(0, 80):
             if 0 <= t <= 19:
                 f = ch(b, c, d)
             elif 20 <= t <= 39:
@@ -98,9 +99,7 @@ def sha1(msg: str) -> str:
             elif 60 <= t <= 79:
                 f = parity(b, c, d)
 
-            print(k[t])
             T = mod_add(32, [rotl(a, 5), f, e, k[t], w_ints[t]])
-            #T = rotl(a, 5) + f + e + k[t] + w_ints[t]
             e = d
             d = c
             c = rotl(b, 30)
@@ -109,7 +108,6 @@ def sha1(msg: str) -> str:
             a = T
 
             print("t=",t, hex(a)[2:], hex(b)[2:], hex(c)[2:], hex(d)[2:], hex(e)[2:])
-            #print("s=", len(hex(a)[2:]), len(hex(b)[2:]), len(hex(c)[2:]), len(hex(d)[2:]), len(hex(e)[2:]))
 
         # compute ith intermediate hash value
         h0 = (a + h0) % mod_32
@@ -119,8 +117,7 @@ def sha1(msg: str) -> str:
         h4 = (e + h4) % mod_32
 
     hh = (h0 << 128) | (h1 << 96) | (h2 << 64) | (h3 << 32) | h4
-    #hh = (hex(h0), hex(h1), hex(h2), hex(h3), hex(h4))
     print(hex(hh))
 
-
-sha1("abc")
+#sha1("abc")
+sha1("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq")

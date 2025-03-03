@@ -89,13 +89,13 @@ def sha1(msg: str) -> str:
 
         # main loop
         for t in range(0, 79):
-            if 0 <= i <= 19:
+            if 0 <= t <= 19:
                 f = ch(b, c, d)
-            elif 20 <= i <= 39:
+            elif 20 <= t <= 39:
                 f = parity(b, c, d)
-            elif 40 <= i <= 59:
+            elif 40 <= t <= 59:
                 f = maj(b, c, d)
-            elif 60 <= i <= 79:
+            elif 60 <= t <= 79:
                 f = parity(b, c, d)
 
             print(k[t])
@@ -121,6 +121,6 @@ def sha1(msg: str) -> str:
     hh = (h0 << 128) | (h1 << 96) | (h2 << 64) | (h3 << 32) | h4
     #hh = (hex(h0), hex(h1), hex(h2), hex(h3), hex(h4))
     print(hex(hh))
-    
+
 
 sha1("abc")

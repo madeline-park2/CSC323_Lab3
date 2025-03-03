@@ -121,5 +121,6 @@ def sha1(msg: str) -> str:
     hh = (h0 << 128) | (h1 << 96) | (h2 << 64) | (h3 << 32) | h4
     #hh = (hex(h0), hex(h1), hex(h2), hex(h3), hex(h4))
     print(hex(hh))
+    
 
 sha1("abc")

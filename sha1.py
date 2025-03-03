@@ -122,10 +122,4 @@ def sha1(msg: str) -> str:
     #hh = (hex(h0), hex(h1), hex(h2), hex(h3), hex(h4))
     print(hex(hh))
 
-        
-
-    
-
-
-
 sha1("abc")

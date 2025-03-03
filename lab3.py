@@ -121,7 +121,6 @@ ll = [1, 2, 3 ,4]
 
 
 
-
 # this = guess_padding()
 # print("\n")
 # print(this)

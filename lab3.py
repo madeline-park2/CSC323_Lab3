@@ -116,9 +116,8 @@ def guess_padding():
 
 ll = [1, 2, 3 ,4]
 
-for j in range(len(ll) - 1, -1, -1):
-    print(j)
-
+#for j in range(len(ll) - 1, -1, -1):
+#    print(j)
 
 
 
@@ -139,99 +138,3 @@ for j in range(len(ll) - 1, -1, -1):
     #     block_arr = bytearray(block)
 
 #     for byte in block_arr:
-
-# SHA1
-
-# SHA1 helpers
-def left_rotate(val, count):
-    char_bit = 8    # num bits in a char
-    u_mask = (char_bit * len(str(val)) - 1) & 0xFFFFFFFF   # the hex makes unsigned
-    count &= u_mask
-    return ((val) << count | (val >> (-count & u_mask)))
-
-# SHA1 function
-def sha1(msg):
-    # 1. initialize variables
-    h0 = 0x67452301
-    h1 = 0xEFCDAB89
-    h2 = 0x98BADCFE
-    h3 = 0x10325476
-    h4 = 0xC3D2E1F0
-    bin_msg = ''.join(format(ord(char), '08b') for char in msg)
-    #bin_msg = bin(int.from_bytes(msg, byteorder="big"))  # remove '0b' prefix
-    msg_len = len(bin_msg)
-    print(msg_len)
-
-    # 2. pre-processing
-    # append the bit '1' to the message
-    # then append 0 ≤ k < 512 bits of '0' s.t. the ml is congruent to
-    # -64 ≡ 448 (mod 512) (len % 512 = 448)
-    # then append ml (orig. len) as a 64-bit big-endian int
-    # .: total len is multiple of 512 bits
-
-    bin_msg += str(0b1) # ???????? not sure what the multiple thing was
-    count = 0
-    while ((not (len(bin_msg) % 512) == 448) or count == 512):
-        bin_msg += str(0b0)  # ???????
-    bin_msg += bin(msg_len)[2:]
-
-    # 3. process message in 512-bit chunks
-    # for each chunk:
-    #   break each chunk into 16 32-bit big-endian words w[i], 0 ≤ i ≤ 15
-    #   for i from 16 to 79:
-    #       w[i] = (w[i-3] xor w[i-8] xor w[i-14] xor 1[i-16]) leftrotate 1
-    #       leftrotate: https://en.wikipedia.org/wiki/Circular_shift
-
-    #   initialize hash value
-
-    msg_list = [bin_msg[i:i + 512] for i in range(0, msg_len, 512)]
-    for m in msg_list:
-        w = [m[i:i + 32] for i in range(0, len(m), 32)] # 16 elements
-        print(w)
-        w = w + ([0] * 64)  # extend list length to 80
-        for i in range(16, 79):
-            w[i] = left_rotate((int(w[i-3]) ^ int(w[i-8]) ^ int(w[i-14]) ^ int(w[i-16])), 1)
-
-        a = h0
-        b = h1
-        c = h2
-        d = h3
-        e = h4
-
-        # 4. main loop:
-        # didn't feel like writing out all the pseudocode
-        for i in range(0, 79):
-            if 0 <= i <= 19:
-                f = ((b & c) | ((~b) & d))
-                k = 0x5A827999
-            elif 20 <= i <= 39:
-                f = b ^ c ^ d
-                k = 0x6ED9EBA1
-            elif 40 <= i <= 59:
-                f = (b & c) | (b & d) | (c & d)
-                k = 0x8F1BBCDC
-            elif 60 <= i <= 79:
-                f = b ^ c ^ d
-                k = 0xCA62C1D6
-            temp = left_rotate(a, 5) + f + e + k + int(w[i])
-            e = d
-            d = c
-            c = left_rotate(b, 30)
-            b = a
-            a = temp
-        
-        h0 = h0 + a
-        h1 = h1 + b 
-        h2 = h2 + c
-        h3 = h3 + d
-        h4 = h4 + e
-        print(hex(h0))
-        print(hex(h1))
-        print(hex(h2))
-        print(hex(h3))
-        print(hex(h4))
-
-    hh = (h0 << 128) | (h1 << 96) | (h2 << 64) | (h3 << 32) | h4
-    return hex(hh)   #??
-
-print(sha1("abc"))

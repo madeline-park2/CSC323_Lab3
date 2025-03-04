@@ -133,7 +133,7 @@ def gen_string(l):
 
 #print(gen_string(56))
 
-def hash(hh): 
+def hash(m, hh): 
     # break into chunks of 50, use as key
     # value is arbitrary i guess?
     hh = bin(int(hh[2:], 16))[2:] # strip
@@ -141,14 +141,15 @@ def hash(hh):
     for i in range(len(hh) - 50):
         temp_str = hex(int(hh[i:i+50], 2))
         if temp_str in hash_dict:
-            print("Collision at", temp_str)
+            print("Collision at", temp_str, "with strings", m, "and", hash_dict.get(temp_str))
             return True
-        hash_dict[temp_str] = 0 # arbitrary
+        hash_dict[temp_str] = m
     return False
 
 def collision_finder():
     catch = False
     while not catch:
-        catch = hash(sha1(gen_string(56)))  # 2 blocks long
+        m = gen_string(112) # 4 blocks long
+        catch = hash(m, sha1(m))
 
 collision_finder()

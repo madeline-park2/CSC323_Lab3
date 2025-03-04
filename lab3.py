@@ -135,6 +135,7 @@ def do_thing():
         this[i] = bytes(this[i])
 
     modified_cookie = b"".join(this)
+    modified_cookie_hex = modified_cookie.hex()
                     
 
     print(modified_cookie)
@@ -142,6 +143,56 @@ def do_thing():
 
 
 
-one = do_thing()
+def timing_attack():
+    # http://localhost:8080/?q=foo&mac=46b4ec586117154dacd49d664e5d63fdc88efb51
 
-print(one)
+    # default_url = check_url(default_urls)
+    # cipher_url = f"{default_url}/eavesdrop"
+    mac = "46b4ec586117154dacd49d664e5d63fdc88efb51"
+    cipher_url = f"http://localhost:8080/?q=foo&mac={mac}"
+    cipher_bytes = bytes.fromhex(mac)
+    final = []
+    arr = bytearray(cipher_bytes)
+    print(len(arr))
+    print(len(cipher_bytes))
+    for i in range(len(arr)):
+        best_time = 0
+        best_guess = None
+        for j in range(256):
+            arr[i] = j
+            thing = bytes(arr)
+            hex_submit = thing.hex()
+
+
+
+
+            new_url = f"http://localhost:8080/?q=foo&mac={hex_submit}"
+            start = time.perf_counter()
+            cipher_sample = requests.get(new_url)
+            end = time.perf_counter()
+            time_elapsed = end - start
+            if time_elapsed > best_time:
+                best_time = time_elapsed
+                best_guess = j
+            
+        final.append(best_guess)
+        print(best_guess)
+    print(final)
+    return final
+
+this = timing_attack()
+        
+    
+for i in range(len(this)):
+    this[i] = bytes(this[i])
+
+modified_cookie = b"".join(this)
+print("wtf")
+print(modified_cookie)
+
+    
+
+
+
+
+

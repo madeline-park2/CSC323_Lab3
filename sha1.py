@@ -1,3 +1,6 @@
+import random
+import string
+
 # SHA1 helper functions
 def ch(x, y, z):
     return (x & y) ^ (~x & z)
@@ -68,8 +71,8 @@ def sha1(msg: str) -> str:
     for block in blocks:
         #print(block)
         w = [block[i:i + 32] for i in range(0, len(block), 32)]
-        for a in w:
-            print(hex(int(a, 2)))
+        """for a in w:
+            print(hex(int(a, 2)))"""
         w_ints = []
         w += ['0' * 32] * (80 - len(w))
         for item in w:
@@ -103,11 +106,10 @@ def sha1(msg: str) -> str:
             e = d
             d = c
             c = rotl(b, 30)
-            #c = b
             b = a
             a = T
 
-            print("t=",t, hex(a)[2:], hex(b)[2:], hex(c)[2:], hex(d)[2:], hex(e)[2:])
+            #print("t=",t, hex(a)[2:], hex(b)[2:], hex(c)[2:], hex(d)[2:], hex(e)[2:])
 
         # compute ith intermediate hash value
         h0 = (a + h0) % mod_32
@@ -117,7 +119,36 @@ def sha1(msg: str) -> str:
         h4 = (e + h4) % mod_32
 
     hh = (h0 << 128) | (h1 << 96) | (h2 << 64) | (h3 << 32) | h4
-    print(hex(hh))
+    #print(hex(hh))
+    return hex(hh)  # returns hex with prefix... maybe change this?
 
 #sha1("abc")
-sha1("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq")
+#sha1("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq")
+
+# SHA1 collision test
+hash_dict = {}
+def gen_string(l):
+    characters = string.ascii_letters + string.digits
+    return ''.join(random.choice(characters) for i in range(l))
+
+#print(gen_string(56))
+
+def hash(hh): 
+    # break into chunks of 50, use as key
+    # value is arbitrary i guess?
+    hh = bin(int(hh[2:], 16))[2:] # strip
+    #print(hh)
+    for i in range(len(hh) - 50):
+        temp_str = hex(int(hh[i:i+50], 2))
+        if temp_str in hash_dict:
+            print("Collision at", temp_str)
+            return True
+        hash_dict[temp_str] = 0 # arbitrary
+    return False
+
+def collision_finder():
+    catch = False
+    while not catch:
+        catch = hash(sha1(gen_string(56)))  # 2 blocks long
+
+collision_finder()

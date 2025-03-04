@@ -37,6 +37,8 @@ def check_url(urls):
 default_url = check_url(default_urls)
 cipher_url = f"{default_url}/eavesdrop"
 def guess_padding():
+    default_url = check_url(default_urls)
+    cipher_url = f"{default_url}/eavesdrop"
     counterr = 0
     cipher_sample = requests.get(cipher_url)
     session = requests.Session()
@@ -46,65 +48,67 @@ def guess_padding():
         print('\nCipher text:\n\n' + stuff + '\n')
         
         cipher_bytes = bytes.fromhex(stuff)
+
         cipher_blocks = [cipher_bytes[i:i + 16] for i in range(0, len(cipher_bytes), 16)]
 
         final_message = []
         check_flag = 0
-        last_byte_option = None
-        # Iterate through all the blocks, starting at the second to last one
-        
-        for i in range(len(cipher_blocks)):
 
-
-            
+        # Iterate through all the blocks, up until the second to last one
+        for i in range(len(cipher_blocks) - 1):
 
             cur_block = bytearray(cipher_blocks[i])
             next_block = bytearray(cipher_blocks[i + 1])
             padding = 1
-            block_block = []
-            final_block = []
-            # block = bytearray(cipher_blocks[i])
+            decrypted_block = []
+            block_to_submit = [None, None]
+
 
             # Iterate through each byte of the block
             for j in range(len(cur_block) - 1, -1, -1):
 
+                print(f"guessing byte {j}: {cur_block[j]}")
+                print(decrypted_block)
+
                 # Try all possible bytes
-                for k in range(255):
-                    if (i == len(cipher_blocks) - 1) and (j == len(cur_block) - 1) and (k == 1):
+                for k in range(256):
+
+                    # each guess
+                    if (i == len(cipher_blocks) - 2) and (j == len(cur_block) - 1) and (k == 1):
                         check_flag = 1
+
                     cur_block[j] ^= k
                     cur_block[j] ^= padding
                     
 
-                    # cipher_blocks[i] = bytes(cur_block)
-                    final_block.append(bytes(cur_block))
-                    final_block.append(bytes(next_block))
+                    block_to_submit[0] = bytes(cur_block)
+                    block_to_submit[1] = bytes(next_block)
 
-                    modified_cookie = b"".join(final_block)
+                    modified_cookie = b"".join(block_to_submit)
                     
                     modified_cookie_hex = modified_cookie.hex()
 
                     
                     guess = session.get(f"{default_url}/?enc={modified_cookie_hex}")
                     if (guess.status_code == 404):
-                        if (check_flag == 1):
-                            last_byte_option = k
-                        else:
-
-                            for l in range(len(cur_block) - 1, len(cur_block) - 1 - padding - 1, -1):
+                        print(f"found byte {j}. it was {k}")
+                        if (check_flag == 0):
+                            decrypted_block.append(k)
+                            for l in range(len(cur_block) - 1, len(cur_block) - 1 - padding, -1):
                                 cur_block[l] ^= padding
                                 cur_block[l] ^= padding + 1
-                            block_block.append(k)
+
                             padding += 1
                             break
-                            
-                
-
-            final_message.append(block_block)
-        
-
-
-
+                            # last_byte_option = k
+                        else:
+                            check_flag = 0
+                            continue
+                    else:
+                        cur_block[j] ^= k
+                        cur_block[j] ^= padding
+            decrypted_block.reverse()        
+            final_message.append(decrypted_block)
 
         return final_message
                         
@@ -113,28 +117,26 @@ def guess_padding():
     else:
         print("bad request")
 
+# for i in range(255):
+    # print(i)
 
-ll = [1, 2, 3 ,4]
+# ll = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+# padding = 1
+# for j in range(len(ll) - 1, len(ll) - 1 - padding, -1):
+#    ll[j] = 0
 
-#for j in range(len(ll) - 1, -1, -1):
-#    print(j)
+# print(ll)
 
+def do_thing():
 
+    this = guess_padding()
 
-# this = guess_padding()
-# print("\n")
-# print(this)
-# print("\n")
-# print(len(this))
-# yes = bytes(this[0])
-# print(yes)
-# print("\n")
-# print("AAAAAAAHHHHHHHHHHHH")
-# hexstr = yes.hex()
-# print("\n")
-# print(hexstr)
+    for i in range(len(this)):
+        this[i] = bytes(this[i])
 
-    # for block in blocks:
-    #     block_arr = bytearray(block)
+    modified_cookie = b"".join(this)
+                    
+    modified_cookie_hex = modified_cookie.hex()
+    print(modified_cookie_hex)
 
-#     for byte in block_arr:
+do_thing()

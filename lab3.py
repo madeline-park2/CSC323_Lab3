@@ -73,7 +73,7 @@ def guess_padding():
                 # Try all possible bytes
                 for k in range(256):
 
-                    # each guess
+                
                     if (i == len(cipher_blocks) - 2) and (j == len(cur_block) - 1) and (k == 1):
                         check_flag = 1
 
@@ -136,7 +136,12 @@ def do_thing():
 
     modified_cookie = b"".join(this)
                     
-    modified_cookie_hex = modified_cookie.hex()
-    print(modified_cookie_hex)
 
-do_thing()
+    print(modified_cookie)
+    return modified_cookie
+
+
+
+one = do_thing()
+
+print(one)

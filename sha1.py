@@ -1,6 +1,7 @@
 import random
 import string
 import threading
+import requests
 
 ### Task II: SHA1
 # SHA1 helper functions
@@ -129,6 +130,7 @@ def sha1(msg: str) -> str:
 
 # SHA1 collision test
 hash_dict = {}
+hash_dict["catch"] = 0
 def gen_string(l):
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for i in range(l))
@@ -140,27 +142,26 @@ def hash(m, hh):
     hh = bin(int(hh[2:], 16))[2:] # strip
     for i in range(len(hh) - 50):
         temp_str = hex(int(hh[i:i+50], 2))
-        if (temp_str in hash_dict): #and (hash_dict.get(temp_str)[0] == i) and (m != hash_dict.get(temp_str)[1]):
+        if (temp_str in hash_dict):
             j = hash_dict.get(temp_str)
             if (m != j[1] and i == j[0]):   # not same starting string but same hash
                 str = "Collision at " + temp_str + " with strings " + m + " and " + hash_dict.get(temp_str)[1]
                 print(str)
-                return True
+                hash_dict["catch"] = 1
         hash_dict[temp_str] = (i, m)
-    return False
 
 def collision_finder():
-    catch = False
-    while not catch:
+    while hash_dict.get("catch") == 0:
         #m = "abc"
-        m = gen_string(28) # 1 block
+        m = gen_string(56) # 2 blocks
         #print(m)
-        catch = hash(m, sha1(m))
+        hash(m, sha1(m))
         #m += 1
 
 if __name__ == "__main__":
     threads = []
     """for i in range(10):
+        # if this doesn't work, look into daemon threads
         thread = threading.Thread(target=collision_finder)
         threads.append(thread)
         thread.start()
@@ -169,6 +170,12 @@ if __name__ == "__main__":
         thread.join()
 
     print("All threads finished")"""
+
+# RESULTS:
+"""
+Collision at 0x3d91df3b7600d with strings UFMuARZIlh1tXK24glVcT5ykQjXozKrmOOgnUMwcXFogfpyZghcobdS0 and jOj7DCbLpcOaI4XQ69fwwLEmYtusGduUTPX6kB3bYAUh5sUNJy7exDR2
+All threads finished
+"""
 
 ### Task III: SHA1 Keyed MAC
 # Length Extension Attack
@@ -194,3 +201,5 @@ def internal_state(hh):
     d = (hh >> 32) & 0xffffffff
     e = hh & 0xffffffff
     return [a, b, c, d, e]
+
+# web server only macs WHAT portion

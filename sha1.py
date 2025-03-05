@@ -1,6 +1,8 @@
 import random
 import string
+import threading
 
+### Task II: SHA1
 # SHA1 helper functions
 def ch(x, y, z):
     return (x & y) ^ (~x & z)
@@ -34,15 +36,15 @@ def mod_add(modulus, list_add):
         s = (s + i) % mod_val
     return s
 
+def init_h(h0, h1, h2, h3, h4):
+    return h0, h1, h2, h3, h4
+    
+
 # SHA1 algorithm
 def sha1(msg: str) -> str:
     mod_32 = (2 ** 32)
     # 1. Set initial hash value
-    h0 = 0x67452301
-    h1 = 0xefcdab89
-    h2 = 0x98badcfe
-    h3 = 0x10325476
-    h4 = 0xc3d2e1f0
+    h0, h1, h2, h3, h4 = init_h(0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0)
 
     k = define_k()
 
@@ -84,7 +86,7 @@ def sha1(msg: str) -> str:
                               ^ w_ints[t-14] 
                               ^ w_ints[t-16]), 1)
         
-        # init working vars with i-1st hash value?
+        # init working vars with i-1st hash value
         a = h0
         b = h1
         c = h2
@@ -120,10 +122,10 @@ def sha1(msg: str) -> str:
 
     hh = (h0 << 128) | (h1 << 96) | (h2 << 64) | (h3 << 32) | h4
     #print(hex(hh))
-    return hex(hh)  # returns hex with prefix... maybe change this?
+    return hex(hh)  # returns hex with prefix
 
 #sha1("abc")
-#sha1("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq")
+#print(sha1("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"))
 
 # SHA1 collision test
 hash_dict = {}
@@ -135,21 +137,60 @@ def gen_string(l):
 
 def hash(m, hh): 
     # break into chunks of 50, use as key
-    # value is arbitrary i guess?
     hh = bin(int(hh[2:], 16))[2:] # strip
-    #print(hh)
     for i in range(len(hh) - 50):
         temp_str = hex(int(hh[i:i+50], 2))
-        if temp_str in hash_dict:
-            print("Collision at", temp_str, "with strings", m, "and", hash_dict.get(temp_str))
-            return True
-        hash_dict[temp_str] = m
+        if (temp_str in hash_dict): #and (hash_dict.get(temp_str)[0] == i) and (m != hash_dict.get(temp_str)[1]):
+            j = hash_dict.get(temp_str)
+            if (m != j[1] and i == j[0]):   # not same starting string but same hash
+                str = "Collision at " + temp_str + " with strings " + m + " and " + hash_dict.get(temp_str)[1]
+                print(str)
+                return True
+        hash_dict[temp_str] = (i, m)
     return False
 
 def collision_finder():
     catch = False
     while not catch:
-        m = gen_string(112) # 4 blocks long
+        #m = "abc"
+        m = gen_string(28) # 1 block
+        #print(m)
         catch = hash(m, sha1(m))
+        #m += 1
 
-collision_finder()
+if __name__ == "__main__":
+    threads = []
+    """for i in range(10):
+        thread = threading.Thread(target=collision_finder)
+        threads.append(thread)
+        thread.start()
+
+    for thread in threads:
+        thread.join()
+
+    print("All threads finished")"""
+
+### Task III: SHA1 Keyed MAC
+# Length Extension Attack
+# can reconstruct internal state from hash digest
+# pad, then extend
+
+# we're given the original message and the signature
+# use post request?
+
+# we know the internal state (a, b, c, d, e) because that's what makes
+# up the final digest (but how do we get that from the signature?)
+# it's H(k || m)
+# so we can feed that into initial h0-h4 values, put on proper padding
+# to get to that state
+# then put in just the padding and new data?
+# hash with SHA1, output should be a valid extension of the original?
+
+def internal_state(hh):
+    hh = int(hh, 16)
+    a = hh >> 128
+    b = (hh >> 96) & 0xffffffff
+    c = (hh >> 64) & 0xffffffff
+    d = (hh >> 32) & 0xffffffff
+    e = hh & 0xffffffff
+    return [a, b, c, d, e]

@@ -42,16 +42,18 @@ def init_h(h0, h1, h2, h3, h4):
     
 
 # SHA1 algorithm
-def sha1(msg: str) -> str:
+def sha1(msg: str, length: int = 0) -> str:
     mod_32 = (2 ** 32)
     # 1. Set initial hash value
     h0, h1, h2, h3, h4 = init_h(0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0)
 
     k = define_k()
-
     # 2. Pad message
     bin_str = ''.join(format(ord(i), '08b') for i in msg)
-    ml = len(bin_str)
+    if length == 0:
+        ml = len(bin_str)
+    else:
+        ml = length
 
     # append '1' to end of the message
     bin_str += '1'
@@ -67,6 +69,7 @@ def sha1(msg: str) -> str:
     while (len(bin_len) < 63):
         bin_len = '0' + bin_len
     bin_str += bin_len
+
     #print(bin_str)
     blocks = [bin_str[i:i + 512] for i in range(0, len(bin_str), 512)]
     #print(len(blocks))
@@ -161,7 +164,6 @@ def collision_finder():
 if __name__ == "__main__":
     threads = []
     """for i in range(10):
-        # if this doesn't work, look into daemon threads
         thread = threading.Thread(target=collision_finder)
         threads.append(thread)
         thread.start()
@@ -202,4 +204,44 @@ def internal_state(hh):
     e = hh & 0xffffffff
     return [a, b, c, d, e]
 
-# web server only macs WHAT portion
+
+def len_ext_attack(msg, hh = None):
+    #h = internal_state(hh)
+    msg_len = len(msg) * 8
+    for i in range(200): # guessing length of key
+        j = {"who" : "me", "what": msg, "mac":sha1(msg, length=msg_len + i)[2:]}
+        print(j)
+        requests.post("http://0.0.0.0:8080/", data=j)
+        
+    # sha1
+    #init_h(h[0], h[1], h[2], h[3], h[4])
+    #sha1(padded_msg, ml)
+    #requests.post("http://0.0.0.0:8080/", padded_msg)
+
+len_ext_attack("abc")
+
+#guess_ml(pad("abc"), 24)
+# HMAC
+
+def hmac(K, text):
+    B = 64  # 512 bits
+    L = 20  # 160 bits
+    hex_lst = [0x36] * B
+    ipad = ''.join([hex(byte) for byte in hex_lst])
+    #print(ipad)
+    K0 = ""
+    k_len = len(str(K)[2:])
+    print(k_len)
+    if k_len == B:
+        K0 = K
+    elif k_len > B:
+        temp = sha1(K, k_len)
+        # add B-L zeros
+        K0 = temp + ("0x0" * (B-L))
+    elif k_len < B:
+        K0 = K + (0x0 * (B-L))
+        print(hex(K0))
+    
+    #k0_ipad = int(K0, 16) ^ int()
+
+hmac(0xabcde, "a")

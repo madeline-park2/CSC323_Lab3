@@ -37,15 +37,13 @@ def mod_add(modulus, list_add):
         s = (s + i) % mod_val
     return s
 
-def init_h(h0, h1, h2, h3, h4):
-    return h0, h1, h2, h3, h4
     
 
 # SHA1 algorithm
-def sha1(msg: str, length: int = 0) -> str:
+def sha1(msg: str, length: int = 0, inj: str = None, H0 = 0x67452301, H1 = 0xefcdab89, H2 = 0x98badcfe, H3 = 0x10325476, H4 = 0xc3d2e1f0) -> str:
     mod_32 = (2 ** 32)
     # 1. Set initial hash value
-    h0, h1, h2, h3, h4 = init_h(0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0)
+    h0, h1, h2, h3, h4 = H0, H1, H2, H3, H4
 
     k = define_k()
     # 2. Pad message
@@ -70,6 +68,20 @@ def sha1(msg: str, length: int = 0) -> str:
         bin_len = '0' + bin_len
     bin_str += bin_len
 
+    if inj is not None:
+        bin_new = ''.join(format(ord(i), '08b') for i in inj)
+        bin_str += bin_new
+        # pad again
+        bin_str += '1'
+        ml = len(bin_new)
+        num_zeros = (448 - (ml + 1)) % 512
+        for i in range(num_zeros):
+            bin_str += '0'
+        bin_len = format(ml, '#010b')[2:]
+        while (len(bin_len) < 63):
+            bin_len = '0' + bin_len
+        bin_str += bin_len
+        
     #print(bin_str)
     blocks = [bin_str[i:i + 512] for i in range(0, len(bin_str), 512)]
     #print(len(blocks))
@@ -208,8 +220,9 @@ def internal_state(hh):
 def len_ext_attack(msg, hh = None):
     #h = internal_state(hh)
     msg_len = len(msg) * 8
+    h = internal_state("a05b82e80a2cf09a694e60849557cb1510af9d53")
     for i in range(200): # guessing length of key
-        j = {"who" : "me", "what": msg, "mac":sha1(msg, length=msg_len + i)[2:]}
+        j = {"who" : "me", "what": msg, "mac":sha1(msg, length=msg_len + i, inj="Like what?", H0=h[0], H1=h[1], H2=h[2], H3=h[3], H4=h[4])[2:]}
         print(j)
         requests.post("http://0.0.0.0:8080/", data=j)
         
@@ -218,7 +231,7 @@ def len_ext_attack(msg, hh = None):
     #sha1(padded_msg, ml)
     #requests.post("http://0.0.0.0:8080/", padded_msg)
 
-len_ext_attack("abc")
+len_ext_attack("Funny names?")
 
 #guess_ml(pad("abc"), 24)
 # HMAC

@@ -37,64 +37,43 @@ def mod_add(modulus, list_add):
         s = (s + i) % mod_val
     return s
 
+def pad(l):
+    bit_len = l * 8
+    padding = b'\x80'
+    padding += b'\x00' * ((56 - (l + 1) % 64) % 64)
+    padding += bit_len.to_bytes(8, 'big')
+    return padding
+
+
     
 
 # SHA1 algorithm
-def sha1(msg: str, length: int = 0, inj: str = None, H0 = 0x67452301, H1 = 0xefcdab89, H2 = 0x98badcfe, H3 = 0x10325476, H4 = 0xc3d2e1f0) -> str:
+def sha1(msg: str, length: int = 0, H0 = 0x67452301, H1 = 0xefcdab89, H2 = 0x98badcfe, H3 = 0x10325476, H4 = 0xc3d2e1f0) -> str:
     mod_32 = (2 ** 32)
     # 1. Set initial hash value
     h0, h1, h2, h3, h4 = H0, H1, H2, H3, H4
 
     k = define_k()
     # 2. Pad message
-    bin_str = ''.join(format(ord(i), '08b') for i in msg)
+    byte_str = msg.encode()
+
     if length == 0:
-        ml = len(bin_str)
+        ml = len(byte_str)
     else:
         ml = length
+    
+    padding = pad(ml)
+    byte_str += padding
 
-    # append '1' to end of the message
-    bin_str += '1'
-
-    # pad with zeros
-    num_zeros = (448 - (ml + 1)) % 512
-
-    for i in range(num_zeros):
-        bin_str += '0'
-    #print(len(bin_str))
-    # append original length to the end
-    bin_len = format(ml, '#010b')[2:]
-    while (len(bin_len) < 63):
-        bin_len = '0' + bin_len
-    bin_str += bin_len
-
-    if inj is not None:
-        bin_new = ''.join(format(ord(i), '08b') for i in inj)
-        bin_str += bin_new
-        # pad again
-        bin_str += '1'
-        ml = len(bin_new)
-        num_zeros = (448 - (ml + 1)) % 512
-        for i in range(num_zeros):
-            bin_str += '0'
-        bin_len = format(ml, '#010b')[2:]
-        while (len(bin_len) < 63):
-            bin_len = '0' + bin_len
-        bin_str += bin_len
-        
-    #print(bin_str)
-    blocks = [bin_str[i:i + 512] for i in range(0, len(bin_str), 512)]
-    #print(len(blocks))
+    blocks = [byte_str[i:i + 64] for i in range(0, len(byte_str), 64)]
     # 3. Prepare the message schedule
     for block in blocks:
         #print(block)
-        w = [block[i:i + 32] for i in range(0, len(block), 32)]
-        """for a in w:
-            print(hex(int(a, 2)))"""
+        w = [block[i:i + 4] for i in range(0, len(block), 4)]
         w_ints = []
-        w += ['0' * 32] * (80 - len(w))
+        w += [b'00' * 8] * (80 - len(w))
         for item in w:
-            w_ints.append(int(item, 2))
+            w_ints.append(int.from_bytes(item, byteorder='big'))
 
         for t in range(16, 80):
             w_ints[t] = rotl((w_ints[t-3] 
@@ -141,7 +120,7 @@ def sha1(msg: str, length: int = 0, inj: str = None, H0 = 0x67452301, H1 = 0xefc
     return hex(hh)  # returns hex with prefix
 
 #sha1("abc")
-#print(sha1("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"))
+print(sha1("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"))
 
 # SHA1 collision test
 hash_dict = {}
@@ -193,19 +172,25 @@ All threads finished
 
 ### Task III: SHA1 Keyed MAC
 # Length Extension Attack
-# can reconstruct internal state from hash digest
-# pad, then extend
 
-# we're given the original message and the signature
-# use post request?
+# plan:
+# message digest = sha1(key || message)
+# we can set the internal state by reversing the sha1 concat and shift process
+# that will give us h0-h4 of the message
+# then we need to figure out the length of the message + the key (in bits)
+# and include that in our sha1 run
+# this will probably have to be done with brute force
+# the extended message must be padding as if the entire message was padded
+# from sha1: whole input is msg + padding + new
+# so we can comput sha1(new) and it'll be like sha1(key || msg || padding || new)
+# if we know the length of the key and the length of the message we can figure out
+# the length of the padding
+# those three get added together and input as the injection length, along with
+# the length of the actual injected message
 
-# we know the internal state (a, b, c, d, e) because that's what makes
-# up the final digest (but how do we get that from the signature?)
-# it's H(k || m)
-# so we can feed that into initial h0-h4 values, put on proper padding
-# to get to that state
-# then put in just the padding and new data?
-# hash with SHA1, output should be a valid extension of the original?
+def guess_ml(l):
+    p = pad(l)
+    
 
 def internal_state(hh):
     hh = int(hh, 16)
@@ -231,7 +216,7 @@ def len_ext_attack(msg, hh = None):
     #sha1(padded_msg, ml)
     #requests.post("http://0.0.0.0:8080/", padded_msg)
 
-len_ext_attack("Funny names?")
+#len_ext_attack("Funny names?")
 
 #guess_ml(pad("abc"), 24)
 # HMAC
@@ -257,4 +242,4 @@ def hmac(K, text):
     
     #k0_ipad = int(K0, 16) ^ int()
 
-hmac(0xabcde, "a")
+#hmac(0xabcde, "a")

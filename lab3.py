@@ -12,7 +12,7 @@ from Crypto.Cipher import AES
 def xor_bytes(a, b):
     return bytes(x ^ y for x, y in zip(a, b))
 
-
+### Tyler Brady and Madeline Park, Lab 3
 
 # Task 1 - Padding Oracle
 

@@ -2,6 +2,10 @@ import random
 import string
 import threading
 import requests
+import hashlib
+import struct
+
+### Tyler Brady and Madeline Park, SHA1 (Task 2, Lab 3)
 
 ### Task II: SHA1
 # SHA1 helper functions
@@ -39,31 +43,34 @@ def mod_add(modulus, list_add):
 
 def pad(l):
     bit_len = l * 8
-    padding = b'\x80'
-    padding += b'\x00' * ((56 - (l + 1) % 64) % 64)
-    padding += bit_len.to_bytes(8, 'big')
-    return padding
+    padding = b'\x80'.hex()
+    padding += (b'\x00' * ((56 - (l + 1) % 64) % 64)).hex()
+    padding += bit_len.to_bytes(8, 'big').hex()
+    return [bytes.fromhex(padding), len(padding)]
 
 
     
 
 # SHA1 algorithm
-def sha1(msg: str, length: int = 0, H0 = 0x67452301, H1 = 0xefcdab89, H2 = 0x98badcfe, H3 = 0x10325476, H4 = 0xc3d2e1f0) -> str:
+def sha1(msg, H0 = 0x67452301, H1 = 0xefcdab89, H2 = 0x98badcfe, H3 = 0x10325476, H4 = 0xc3d2e1f0, length: int = 0) -> str:
     mod_32 = (2 ** 32)
     # 1. Set initial hash value
     h0, h1, h2, h3, h4 = H0, H1, H2, H3, H4
 
     k = define_k()
     # 2. Pad message
-    byte_str = msg.encode()
+    byte_str = msg
+    if isinstance(msg, str):
+        byte_str = msg.encode()
 
     if length == 0:
         ml = len(byte_str)
     else:
         ml = length
     
-    padding = pad(ml)
+    padding = pad(ml)[0]
     byte_str += padding
+    print(byte_str)
 
     blocks = [byte_str[i:i + 64] for i in range(0, len(byte_str), 64)]
     # 3. Prepare the message schedule
@@ -115,12 +122,17 @@ def sha1(msg: str, length: int = 0, H0 = 0x67452301, H1 = 0xefcdab89, H2 = 0x98b
         h3 = (d + h3) % mod_32
         h4 = (e + h4) % mod_32
 
-    hh = (h0 << 128) | (h1 << 96) | (h2 << 64) | (h3 << 32) | h4
+        """h0 = h0 << 128
+        h1 = h1 << 96
+        h2 = h2 << 64
+        h3 = h3 << 32"""
+
+    #hh = (h0 << 128) | (h1 << 96) | (h2 << 64) | (h3 << 32) | h4
     #print(hex(hh))
-    return hex(hh)  # returns hex with prefix
+    return b''.join(struct.pack(b'>I', h) for h in [h0, h1, h2, h3, h4])
 
 #sha1("abc")
-print(sha1("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"))
+print("here???", sha1("YELLOW SUBMARINEFunny names?").hex())
 
 # SHA1 collision test
 hash_dict = {}
@@ -170,6 +182,7 @@ Collision at 0x3d91df3b7600d with strings UFMuARZIlh1tXK24glVcT5ykQjXozKrmOOgnUM
 All threads finished
 """
 
+
 ### Task III: SHA1 Keyed MAC
 # Length Extension Attack
 
@@ -188,12 +201,10 @@ All threads finished
 # those three get added together and input as the injection length, along with
 # the length of the actual injected message
 
-def guess_ml(l):
-    p = pad(l)
-    
 
 def internal_state(hh):
-    hh = int(hh, 16)
+    temp = hh
+    hh = int(temp, 16)
     a = hh >> 128
     b = (hh >> 96) & 0xffffffff
     c = (hh >> 64) & 0xffffffff
@@ -201,45 +212,111 @@ def internal_state(hh):
     e = hh & 0xffffffff
     return [a, b, c, d, e]
 
+def guess_ml(kl):
+    orig_msg = b"Funny names?"
+    h = internal_state("c8067cc0d4de4e68882cc5273e8c5b1d5839ca65")
+    l = kl + len(orig_msg)
+    p = pad(l)
+    print(p[0])
 
-def len_ext_attack(msg, hh = None):
-    #h = internal_state(hh)
-    msg_len = len(msg) * 8
-    h = internal_state("a05b82e80a2cf09a694e60849557cb1510af9d53")
-    for i in range(200): # guessing length of key
-        j = {"who" : "me", "what": msg, "mac":sha1(msg, length=msg_len + i, inj="Like what?", H0=h[0], H1=h[1], H2=h[2], H3=h[3], H4=h[4])[2:]}
-        print(j)
-        requests.post("http://0.0.0.0:8080/", data=j)
-        
-    # sha1
-    #init_h(h[0], h[1], h[2], h[3], h[4])
-    #sha1(padded_msg, ml)
-    #requests.post("http://0.0.0.0:8080/", padded_msg)
+    add = b"Huh"
+    new_msg = orig_msg + p[0] + add
+    print(new_msg)
+    new_l = l + len(p) + len(add)
+    print(new_l)
+    new = sha1(b'Funny names?' + b'\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xe0' + add, h[0], h[1], h[2], h[3], h[4], new_l).hex()
+    print("show me to me rachel", new)
+    #print(sha1(b'YELLOW SUBMARINEFunny names?\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xe0Huh').hex())
+    j = {"who" : "me", "what": b'Funny names?' + b'\x80\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xe0' + add, "mac":new}
 
-#len_ext_attack("Funny names?")
+    requests.post("http://0.0.0.0:8080/", data=j)
 
-#guess_ml(pad("abc"), 24)
+#print(sha1("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq").hex())
+
+
+#guess_ml(16)
+"""k = b'YELLOW SUBMARINE'
+s = b'Funny names?'
+x = sha1(b'YELLOW SUBMARINEFunny names?').hex()
+print("original:", x)
+p = pad((len(k)) + (len(s)))
+p0 = p[0]
+print("this is", p[1])
+h = internal_state(x)
+#print(hex((h[0] << 128) | (h[1] << 96) | (h[2] << 64) | (h[3] << 32) | h[4]))
+print(sha1(b'Huh', h[0], h[1], h[2], h[3], h[4], ((len(k)) + (len(s))) + len(p[0]) + 3).hex())
+print(sha1(k + s + p0 + b'Huh').hex())"""
+"""print(k + s + p0 + b'f\xbf\xbd' + b'Huh')
+print(len(k + s + p0 + b'Huh'))"""
+#print(sha1(b'YELLOW SUBMARINEFunny names?\xef\xbf\xbd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xef\xbf\xbdHuh').hex())
+
+
 # HMAC
+def extend_hex(hstr, ext):
+    repeated = []
+    for i in range(ext):
+        repeated.append(hstr)
+    return b''.join([bytes(value) for value in repeated])
+
+def xor(bytes1, bytes2):
+    """
+    XORs two bytestrings and returns the result as a new bytestring.
+    """
+    return bytes(b1 ^ b2 for b1, b2 in zip(bytes1, bytes2))
 
 def hmac(K, text):
-    B = 64  # 512 bits
-    L = 20  # 160 bits
-    hex_lst = [0x36] * B
-    ipad = ''.join([hex(byte) for byte in hex_lst])
-    #print(ipad)
+    B = 64
+    L = 20
+    H = sha1
+    #H = hashlib.sha1()
+    ipad = extend_hex(b'36', B)
+    opad = extend_hex(b'5c', B)
+
     K0 = ""
-    k_len = len(str(K)[2:])
+
+    if isinstance(K, str):
+        K = K.encode()
+
+    byte_text = text.encode()
+
+    k_len = (K.bit_length() + 7) // 8
+    #k_len = len(K)
     print(k_len)
+
+    # 1. If the length of K = B: set K0 = K. 
     if k_len == B:
         K0 = K
+    # 2. If the length of K > B: hash K to obtain an L byte string, then append (B-L)
+    #    zeros to create a B-byte string K
     elif k_len > B:
-        temp = sha1(K, k_len)
-        # add B-L zeros
-        K0 = temp + ("0x0" * (B-L))
+        K0 = H(K) + (b'\x00' * (B-L))
+    # 3. If the length of K < B: append zeros to the end of K to create a B-byte string K0
     elif k_len < B:
-        K0 = K + (0x0 * (B-L))
-        print(hex(K0))
-    
-    #k0_ipad = int(K0, 16) ^ int()
+        #print((B-k_len))
+        K0 = K + (b'\x00' * (B-k_len))
 
-#hmac(0xabcde, "a")
+    # 4. Exclusive-Or K0 with ipad to produce a B-byte string: K0 ⊕ ipad. 
+    print(type(ipad))
+    k0_ipad = xor(K0, ipad) #int(K0, 16) ^ int(ipad, 16)
+    # 5. Append the stream of data 'text' to the string resulting from step 4:
+    #    (K0 ⊕ ipad) || text. 
+    temp_5 = k0_ipad + byte_text
+    #print(temp_5)
+    #print(temp)
+    # 6. Apply H to the stream generated in step 5: H((K0 ⊕ ipad) || text).
+    temp_6 = H(temp_5)
+    # 7. Exclusive-Or K0 with opad: K0 ⊕ opad.
+    temp_7 = xor(K0, opad)
+    # 8. Append the result from step 6 to step 7:
+    #    (K0 ⊕ opad) || H((K0 ⊕ ipad) || text). 
+    temp_8 = temp_7 + temp_6
+    # 9.  Apply H to the result from step 8: 
+    #     H((K0 ⊕ opad )|| H((K0 ⊕ ipad) || text)).
+    ret = H(temp_8)
+    return ret
+
+print(hmac(0x0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b, "Hi There").hex())
+#print(hmac("Jefe", "what do ya want for nothing?").hex())
+
+#sha1("abc")
+#print(sha1("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"))
